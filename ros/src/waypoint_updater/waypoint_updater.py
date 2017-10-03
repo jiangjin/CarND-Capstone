@@ -26,8 +26,12 @@ LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this n
 
 class WaypointUpdater(object):
     def __init__(self):
+
         rospy.init_node('waypoint_updater')
 
+        # final=Lane
+        # self.posex=0
+        
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
 
@@ -36,17 +40,86 @@ class WaypointUpdater(object):
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
+
         # TODO: Add other member variables you need below
 
         rospy.spin()
 
     def pose_cb(self, msg):
         # TODO: Implement
+        #
+        # rate=rospy.Rate(10)
+        # while not rospy.is_shutdown():
+
+        #     print("current pose")
+        #     print(msg.pose.position.x)
+        #     print(msg.pose.position.y)
+        #     print(msg.pose.position.z)
+
+        #     rate.sleep()
+        self.pose=msg.pose.position
+        self.posex=msg.pose.position.x
+        self.posey=msg.pose.position.y
+        self.posez=msg.pose.position.z
+
+
+        
+        
+        
+        
+
+        # print("inside",self.posex)
+
         pass
 
     def waypoints_cb(self, waypoints):
         # TODO: Implement
+
+        # print(waypoints.waypoints[0].twist.twist.linear.x)
+
+        # print(len(waypoints.waypoints))
+
+        # print(waypoints)   
+
+
+        # global final
+        # final=waypoints 
+        start_time=0
+        rate=rospy.Rate(6)
+
+        while not start_time:
+            start_time=rospy.Time.now().to_sec()
+            
+
+        while not rospy.is_shutdown():
+
+            rate.sleep()
+
+            dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
+            distance=9999
+            index=None
+
+            for i in range(len(waypoints.waypoints)):
+                point_distance=dl(waypoints.waypoints[i].pose.pose.position,self.pose)
+                if point_distance<distance:
+                    distance=point_distance
+                    index=i
+            
+
+            subset=waypoints
+            subset.header=waypoints.header
+            subset.waypoints=waypoints.waypoints[i:i+LOOKAHEAD_WPS]
+
+
+
+            self.final_waypoints_pub.publish(subset)
+
+
         pass
+
+
+
+
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
@@ -69,7 +142,6 @@ class WaypointUpdater(object):
             dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
             wp1 = i
         return dist
-
 
 if __name__ == '__main__':
     try:

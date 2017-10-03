@@ -58,7 +58,18 @@ class DBWNode(object):
 
         # TODO: Subscribe to all the topics you need to
 
+        rospy.Subscriber('/twist_cmd', TwistStamped, self.twistdata)
+
         self.loop()
+
+
+
+    def twistdata(self, msg):
+
+
+        pass
+
+
 
     def loop(self):
         rate = rospy.Rate(50) # 50Hz
@@ -72,6 +83,11 @@ class DBWNode(object):
             #                                                     <any other argument you need>)
             # if <dbw is enabled>:
             #   self.publish(throttle, brake, steer)
+
+
+            self.publish(0.9,0,0)
+
+
             rate.sleep()
 
     def publish(self, throttle, brake, steer):
