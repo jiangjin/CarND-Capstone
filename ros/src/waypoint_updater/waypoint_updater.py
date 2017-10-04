@@ -6,6 +6,8 @@ from styx_msgs.msg import Lane, Waypoint
 
 import math
 
+from copy import deepcopy
+
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
 
@@ -28,92 +30,75 @@ class WaypointUpdater(object):
     def __init__(self):
 
         rospy.init_node('waypoint_updater')
-
-        # final=Lane
-        # self.posex=0
         
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
-
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
-
         # TODO: Add other member variables you need below
+        self.pose=None
+        self.given_waypoints=None
+
+        #to be able to store the old/last position
+        self.old_pose=None
+
+        #to be decided if they are going to be used
+        self.new_pose=None
+        self.old_wp=None
+        self.new_wp=None
 
         rospy.spin()
 
     def pose_cb(self, msg):
         # TODO: Implement
-        #
-        # rate=rospy.Rate(10)
-        # while not rospy.is_shutdown():
 
-        #     print("current pose")
-        #     print(msg.pose.position.x)
-        #     print(msg.pose.position.y)
-        #     print(msg.pose.position.z)
+        dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
+        distance=9999
+        index=None
 
-        #     rate.sleep()
         self.pose=msg.pose.position
-        self.posex=msg.pose.position.x
-        self.posey=msg.pose.position.y
-        self.posez=msg.pose.position.z
 
+        #to prevent situations where the simulator gives the /current_pose before providing the /base_points
+        if self.given_waypoints is None:
+            pass
 
-        
-        
-        
-        
+        else:
+            if self.old_pose==msg.pose:
+                self.new_wp=self.old_wp
+            else:
+                subset_waypoints=Lane()
+                subset_end_index=None
 
-        # print("inside",self.posex)
+                for i in range(len(self.given_waypoints)):
+                    point_distance=dl(self.given_waypoints[i].pose.pose.position,self.pose)
+                    if point_distance<distance:
+                        distance=point_distance
+                        index=i
+                self.new_wp=index
+                self.old_wp=self.new_wp
+                self.old_pose=msg.pose
 
-        pass
+                #to fix the case when the last waypoint is outside of the waypoints list
+                subset_end_index=self.new_wp+LOOKAHEAD_WPS
+                if subset_end_index>len(self.given_waypoints)-1:
+                    subset_end_index=len(self.given_waypoints)-1
+
+                for i in range(self.new_wp,subset_end_index):
+                    subset_waypoints.waypoints.append(deepcopy(self.given_waypoints[i]))
+
+                self.final_waypoints_pub.publish(subset_waypoints)
+
 
     def waypoints_cb(self, waypoints):
         # TODO: Implement
 
-        # print(waypoints.waypoints[0].twist.twist.linear.x)
-
-        # print(len(waypoints.waypoints))
-
-        # print(waypoints)   
-
-
-        # global final
-        # final=waypoints 
-        start_time=0
-        rate=rospy.Rate(6)
-
-        while not start_time:
-            start_time=rospy.Time.now().to_sec()
-            
-
-        while not rospy.is_shutdown():
-
-            rate.sleep()
-
-            dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
-            distance=9999
-            index=None
-
-            for i in range(len(waypoints.waypoints)):
-                point_distance=dl(waypoints.waypoints[i].pose.pose.position,self.pose)
-                if point_distance<distance:
-                    distance=point_distance
-                    index=i
-            
-
-            subset=waypoints
-            subset.header=waypoints.header
-            subset.waypoints=waypoints.waypoints[i:i+LOOKAHEAD_WPS]
-
-
-
-            self.final_waypoints_pub.publish(subset)
-
+        #since /base_waypoints is only published once, the given_waypoints is only changed once as well.
+        #I think we only need the .waypoints, so I've discarded the .header
+        if self.given_waypoints is None:
+            self.given_waypoints=waypoints.waypoints
 
         pass
 
