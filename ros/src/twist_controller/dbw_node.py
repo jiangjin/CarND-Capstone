@@ -62,7 +62,18 @@ class DBWNode(object):
         rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cmd_cb)
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
 
+
+        #subscribe to twist_cmd
+        rospy.Subscriber('/twist_cmd', TwistStamped, self.twistdata)
+
         self.loop()
+
+    #define subscriber callback function
+    def twistdata(self, msg):
+        #TODO: write function to store twist info in TwistController object
+        pass
+
+
 
     def loop(self):
         rate = rospy.Rate(50) # 50Hz
@@ -77,6 +88,11 @@ class DBWNode(object):
             if self.dbw_enabled is True:
                 pass
             #   self.publish(throttle, brake, steer)
+
+            #TODO: just an example to set the throttle constant and to see if the car is able to move.
+            self.publish(20,0,0)
+
+
             rate.sleep()
 
     def publish(self, throttle, brake, steer):
