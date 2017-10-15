@@ -63,7 +63,7 @@ class WaypointUpdater(object):
 
         #to prevent situations where the simulator gives the /current_pose before providing the /base_points
         if self.given_waypoints is None:
-            pass
+            return
 
         else:
             if self.old_pose==msg.pose:
@@ -88,6 +88,10 @@ class WaypointUpdater(object):
 
                 for i in range(self.new_wp,subset_end_index):
                     subset_waypoints.waypoints.append(deepcopy(self.given_waypoints[i]))
+
+                 # set velocity for each waypoint
+                for i in range(len(subset_waypoints.waypoints)):
+                    self.set_waypoint_velocity(subset_waypoints.waypoints, i, 1)
 
                 self.final_waypoints_pub.publish(subset_waypoints)
 
