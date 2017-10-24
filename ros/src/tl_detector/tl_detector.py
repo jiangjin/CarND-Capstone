@@ -73,7 +73,7 @@ class TLDetector(object):
             return False
 
     def pose_cb(self, msg):
-        self.pose = msg
+        self.pose = msg.pose
 
     def get_stop_line_waypoints(self):
         # List of positions that correspond to the line to stop in front of for a given intersection
@@ -147,14 +147,13 @@ class TLDetector(object):
             int: index of the closest waypoint in self.waypoints
 
         """
-        index = 0
+        index = -1
         distances = []
-        if not self.waypoints is None:
-            for wp in self.waypoints:
-                dist = self.eucl_dist(pose.position, wp.pose.pose.position)
-                distances.append(dist)
+        for wp in self.waypoints:
+            dist = self.eucl_dist(pose.position, wp.pose.pose.position)
+            distances.append(dist)
 
-            index = np.argmin(distances)
+        index = np.argmin(distances)
 
         return index
 
@@ -190,21 +189,20 @@ class TLDetector(object):
         light = None
         light_wp = -1
 
-        if self.pose:
-            car_position = self.get_closest_waypoint(self.pose.pose)
+        if self.pose and self.waypoints:
+            car_position = self.get_closest_waypoint(self.pose)
 
-        # TODO find the closest visible traffic light (if one exists)
+        # TODO find the closest visible traffic light waypoint index (if one exists)
         for i, slw in enumerate(self.stop_line_waypoints):
             if car_position < slw < (car_position + self.LOOKAHEAD_WPS):
                 light = self.lights[i]
-                light_wp = i
+                light_wp = slw
                 break
 
         if light:
             state = self.get_light_state(light)
             return light_wp, state
 
-        #self.waypoints = None
         return -1, TrafficLight.UNKNOWN
 
 
