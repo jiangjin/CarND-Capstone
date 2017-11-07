@@ -3,6 +3,11 @@ import tensorflow as tf
 import numpy as np
 import time
 import os
+from functools import partial
+
+MODEL_FILE = './frozen_inference_graph.pb'
+MODEL_CHUNKS_PATH = './model_chunks'
+MODEL_CHUNK_SIZE = 1024
 
 
 class TLClassifier(object):
@@ -15,7 +20,21 @@ class TLClassifier(object):
         self.score_tensor = None
         self.class_tensor = None
 
-        self.create_detection_graph("./frozen_inference_graph.pb")
+        # was model existing?
+        if not os.path.exists(MODEL_FILE):
+            # if not - build it from the chunks
+            if os.path.exists(MODEL_CHUNKS_PATH):
+                output = open(MODEL_FILE, 'wb')
+                chunks = os.listdir(MODEL_CHUNKS_PATH)
+                chunks.sort()
+                for filename in chunks:
+                    filepath = os.path.join(MODEL_CHUNKS_PATH, filename)
+                    with open(filepath, 'rb') as fileobj:
+                        for chunk in iter(partial(fileobj.read, MODEL_CHUNK_SIZE), ''):
+                            output.write(chunk)
+                output.close()
+
+        self.create_detection_graph(MODEL_FILE)
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
