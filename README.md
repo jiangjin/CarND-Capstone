@@ -30,14 +30,25 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 ### Docker Installation
 [Install Docker](https://docs.docker.com/engine/installation/)
 
-Build the docker container
+Build the docker image
 ```bash
 ./build-docker-image.sh
 ```
 
-Run the docker file
+Build the GPU enabled docker image
+```bash
+cd build-docker-gpu
+./build-docker-image.sh
+```
+
+Run the docker container
 ```bash
 ./run.sh
+```
+
+Run the GPU enabled docker container
+```bash
+./run_gpu.sh
 ```
 
 Inside docker container
